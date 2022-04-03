@@ -1,0 +1,39 @@
+알아야한다
+document.getElementById()
+document.querySelector()
+createElemenet('태그')
+.innerText = ?
+append()
+.classList.add()
+
+생성한다
+babel.config.json
+생성한다
+nodemon.json
+
+수행한다
+npm i nodemon -D
+git init
+npm i @babel/core @babel/cli @babel/node @babel/presets -D
+
+생성한다
+.gitignore
+
+설정한다
+nodemon.json
+babel.config.json
+package.json에 "scripts":{"dev":"nodemon"}
+
+이제 package.json 에 필요한 라이브러리가 모두 들어있다.
+
+
+dev를 치면 nodemon이 호출될거고, nodemon.json의 exec을 수행
+nodemon? exec-> server에 대해 babel-node 명령문을 수행
+babel.config.json  우리가 사용할 유일한 preset이 수행
+
+
++
+npm i express
+npm i pug
+
+서버 수행은 npm run dev으로 수행.
