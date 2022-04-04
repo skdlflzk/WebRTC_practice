@@ -1,55 +1,79 @@
+/**
+ * SocketIO 버전의 client
+ */
 
-const messageList = document.querySelector("ul");
-const messageForm = document.querySelector("form#message");
-const nickForm = document.querySelector("form#nick");
+const socket = io();
+const welcome = document.getElementById("welcome");
+const form = welcome.querySelector("form");
+const room = document.getElementById("room");
+const h3 = document.querySelector("h3");
 
-const nickname = "";
-function handleSubmit(e){
+let roomName = "";
+
+room.hidden = true;
+
+function handleRoomSubmit(e){
 	e.preventDefault();
-	const input = messageForm.querySelector("input");
-	
-	console.log(input.value)
-	socket.send(JSON.stringify({
-		type:"new_message",
-		payload:input.value
-	}));
-	const item = document.createElement('li');
-	item.innerText = input.value;
-	messageList.append(item);
+	const input = form.querySelector("input");
+	roomName = input.value;
+	input.value = ""
 
-	input.value = "";
+	socket.emit("enter_room", roomName
+	// 1,2,3,4,5,6,7,'여러개 데이터를 보낼 수 있다.', 
+	// (valuableValue)=>{ //함수도 보낼 수 있따.
+	// 	console.log("오래 기다린 후 ",valuableValue,"를 받았다.");
+	// 	// 함수를 전달해서 인자를 받을 수 있지만, 그 인자로 함수를 받을 수는 없나보다ㅋ.ㅋ
+	// })
+	// <-> socket.send("only text")
+	// 1. 이벤트를 선택할 수 있고
+	// 2. object도 전달할 수 있다.
+		,function showRoom(e){
+			console.log(e)
+			room.hidden = false;
+			welcome.hidden = true;
+			h3.innerText = roomName;
+			const nameForm = room.querySelector("form#name");
+			const chatForm = room.querySelector("form#msg");
+			nameForm.addEventListener("submit", handleNick);
+			chatForm.addEventListener("submit", handleChat);
+		})
+	
 }
+
 function handleNick(e){
 	e.preventDefault();
-	
-	const input = nickForm.querySelector("input");
-	// socket.send(input.value); // nick을 message처럼 전송
-	
-	socket.send(JSON.stringify({
-		type:"nickname",
-		payload:input.value
-	}));
+	const input = room.querySelector("#name input")
+	socket.emit("nickname", input.value);
 }
 
-messageForm.addEventListener("submit", handleSubmit)
-nickForm.addEventListener("submit",handleNick)
+function handleChat(e){
+	e.preventDefault();
+	console.log(`chat! ${e}` )
+	const input = room.querySelector("#msg input");
+	socket.emit("new_msg", input.value, roomName, ()=>{
+		addMessage(`YOU : ${input.value}`)
+		input.value = ""
+	});
+}
 
-// ws://localhost:3000 이라고 하기 싫다. 하드코딩이니까
-// const socket = new WebSocket("ws://./:3000")
-// window.location.host
-const socket = new WebSocket("ws://"+window.location.host)
+form.addEventListener("submit", handleRoomSubmit);
 
-//Socket을 생성함. socket도 Button처럼 이벤트를 받거나 일으킬 수 있다.
-socket.addEventListener("open",()=>{
-	console.log("connected to server");
-})
-socket.addEventListener("message", (message)=>{
-	console.log("msg received : \n", message.data);
-	const item = document.createElement('li');
-	item.innerText = message.data;
-	messageList.append(item);
+socket.on("welcome", ()=>{
+	addMessage("someone come")
 })
 
-socket.addEventListener("close",()=>{
-	console.log("disconnected from server");
+socket.on("bye", (e)=>{
+	addMessage(`${e} Left. say good bye`)
 })
+
+socket.on("new_msg", (msg)=>{
+	console.log(msg)
+	addMessage(msg)
+})
+
+function addMessage(msg){
+	const ul = room.querySelector("ul")
+	const li = document.createElement("li");
+	li.innerText = msg;
+	ul.appendChild(li);
+}

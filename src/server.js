@@ -1,6 +1,9 @@
+/**
+ * SocketIO를 사용한 server
+ */
 import http from "http";
 import express from "express";
-import WebSocket from "ws";
+import SocketIO from "socket.io"
 
 const app = express();
 app.set('view engine', "pug");
@@ -9,57 +12,60 @@ app.use("/public", express.static(__dirname + "/public"));
 app.get("/", (req,res)=>res.render("home"));
 app.get("/*",(req,res)=>res.redirect("/"));
 
-// app.listen(3000);
+const httpServer = http.createServer(app);
+const ioServer = SocketIO(httpServer);
 
-// node.js에 내장된 http package를 사용해본다
-const server = http.createServer(app);
-// express app으로 부터 http서버로 접근하게 만든 것!
-// app.listen(3000);은 서버를 만들뿐 instance를 갖고오진 못했다.
-
-const wss = new WebSocket.Server({server}); // .server(option)는 선택
-//같은 포트로 쓰기 위해서 server 객체를 넘겨준 것이다.
-
-const handleListen = ()=>console.log("server started");
-
-server.listen(3000, handleListen); //app.listen(3000, eventHandler);
-// 브라우져는 이미 ws 코드가 구현되어있으므로 따로 script lib이 필요하지 않음
-
-// 웹소켓이 연결되었을 경우 콜백 함수를 지정
-// 첫 파라메터 socket은 연결 정보를 반환해줌.
-function handleConnection(socket){
+ioServer.on("connection", (socket)=>{
 	
-	//연결되면 hello!!! 메세지를 보낸다.
-	sockets.push(socket);
-	//받은 socket 데이터에 기본 nickname 세팅
-	socket.nickname ="Anon";
-	socket.on("close", onSocketClosed)
-	
-	// 모든 수신한 데이터를 message로 수신하고 있다.
-	socket.on("message", (msg)=>{
-		const message = JSON.parse(msg);
-		console.log(message.type)
-		switch(message.type){
-			case "new_message":
-				sockets
-				.filter(s=>s.nickname !== socket.nickname)
-				.forEach((e)=>
-					e.send(socket.nickname+":"+message.payload)				
-				)
-				break;
-			case "nickname":
-				console.log("set nick = " + message.payload)
-				socket.nickname = message.payload
-		}
+	socket.nickname = 'Anon';
+
+	// socket.rooms => 현재 접속한 socket의 방 참가정보
+	socket.onAny((e)=>{
+		console.log(`socket event:${e}`);
+		socket.emit('new_msg', '꼬ㅒㄲ')
 	})
-}
+	
+	socket.on("enter_room",(roomName,done)=>{
+		// 룸에 입장
+		socket.join(roomName);
+		//client의 룸입장 성공 함수 실행
+		done(roomName);
 
-function onSocketClosed(s){
-	console.log("Disconncted from client");
-	// sockets = sockets.
-}
-wss.on("connection", handleConnection);
+		//나를 제외한 사람에게 보낸다!!
+		socket.to(roomName).emit("welcome")
+	})
 
 
-// 누군가가 연결해오면 DB에 연결 정보를 저장해서
-// socket.send() <- send할 소켓 대상을 지정한다.
-const sockets =[];
+	socket.on("disconnecting", ()=>{
+		// 나가려고 하지만, 나가지는 않은 상태
+		// 그래서 socket.rooms의 내부에 room 정보가 살아있다
+		// 유종애미를 거두거라.
+
+		socket.rooms.forEach((room)=>{
+			console.log(`bye to ${room}`)
+			socket.to(room).emit("bye", socket.nickname)
+		});
+	});
+
+
+	socket.on("new_msg", (msg, roomName, done)=>{
+		console.log(`[${roomName}]<${msg}>`)
+		// socket.to(roomName).emit(msg);
+		socket.to(roomName).emit("new_msg",`${socket.nickname} : ${msg}`);
+		
+		done();
+	})
+
+	socket.on("nickname", (nick)=>{
+		socket.nickname = nick;
+	})
+
+	socket.on("example", (msg, heavyFunction)=>{ // ,a,b,d,e,f,g, callback) => {
+		//변수도 보내고 함수도 보낼 수 있다는 것.
+		console.log(msg)
+		setTimeout(()=>heavyFunction(Date.now()), 1000)
+	});
+})
+
+const handleListen = () => console.log(`Listening on http://localhost:3000`);
+httpServer.listen(3000, handleListen);
