@@ -153,3 +153,72 @@ socket.to 와 on으로 메세지 발송 대상, 발송 이벤트, 발송 메세�
 
 
 
+------------
+
+## Adapter
+
+Adapter 다른 서버들 사이에 실시간 어플리케이션을 동기화 하는 것.
+현재 메모리에서 Adapter를 구현하는 중.
+(서버 restart 마다 room, socket들은 사라진다.)
+-> backend에 db를 가져야한다.
+또한, 모든 클라이언트의 connection을 간직해야한다.
+브라우저는 서버로 단 한개의 connection을 열지만 서버는 많은 connection을 가지게 된다.
+여러대의 서버가 있다면 메모리 Adapter는 다른 서버마다 다른 pool을 가지므로 서버간 공유가 안된다는 것.
+Connection에 대한 DB가 필요하다.
+
+Adapter ? 누가 현재 어플리케이션에 접속되었는지 알려줄거임
+아래와 같음.
+
+	console.log(ioServer.sockets.adapter)
+		<ref *2> Adapter {
+		_events: [Object: null prototype] {},
+		_eventsCount: 0,
+		_maxListeners: undefined,
+		nsp: <ref *1> Namespace {
+			_events: [Object: null prototype] { connection: [Function (anonymous)] },       
+			_eventsCount: 1,
+			_maxListeners: undefined,
+			sockets: Map(1) { 'yKPvII65gVMK8IuUAAAB' => [Socket] },
+			_fns: [],
+			_ids: 0,
+			server: Server {
+			_events: [Object: null prototype] {},
+			_eventsCount: 0,
+			_maxListeners: undefined,
+			_nsps: [Map],
+			parentNsps: Map(0) {},
+			_path: '/socket.io',
+			clientPathRegex: /^\/socket\.io\/socket\.io(\.msgpack|\.esm)?(\.min)?\.js(\.map)?(?:\?|$)/,
+			_connectTimeout: 45000,
+			_serveClient: true,
+			_parser: [Object],
+			encoder: Encoder {},
+			_adapter: [class Adapter extends EventEmitter],
+			sockets: [Circular *1],
+			opts: {},
+			eio: [Server],
+			httpServer: [Server],
+			engine: [Server],
+			[Symbol(kCapture)]: false
+			},
+			name: '/',
+			adapter: [Circular *2],
+			[Symbol(kCapture)]: false
+		},
+		rooms: Map(2) {
+			'yKPvII65gVMK8IuUAAAB' => Set(1) { 'yKPvII65gVMK8IuUAAAB' },
+			'3' => Set(1) { 'yKPvII65gVMK8IuUAAAB' }
+		},
+		sids: Map(1) {
+			'yKPvII65gVMK8IuUAAAB' => Set(2) { 'yKPvII65gVMK8IuUAAAB', '3' }
+		},
+		encoder: Encoder {},
+		[Symbol(kCapture)]: false
+		}
+
+중요한 것
+1. rooms
+2. sids.(socket ids)
+rooms.containsKey(socket id) ? private room : public room 임.
+
+

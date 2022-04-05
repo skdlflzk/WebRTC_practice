@@ -1,7 +1,7 @@
 /**
  * SocketIO를 사용한 server
  */
-import http from "http";
+import http, { Server } from "http";
 import express from "express";
 import SocketIO from "socket.io"
 
@@ -15,14 +15,28 @@ app.get("/*",(req,res)=>res.redirect("/"));
 const httpServer = http.createServer(app);
 const ioServer = SocketIO(httpServer);
 
+function publicRooms(){
+	const {
+		sockets:{
+			adapter:{sids, rooms}
+		},
+	} = ioServer
+	const publicRooms = [];
+	rooms.forEach((_, roomKey) =>{
+		if (sids.get(roomKey) === undefined){
+			publicRooms.push(roomKey)
+		}
+	})
+	return publicRooms
+}
 ioServer.on("connection", (socket)=>{
-	
 	socket.nickname = 'Anon';
+
 
 	// socket.rooms => 현재 접속한 socket의 방 참가정보
 	socket.onAny((e)=>{
 		console.log(`socket event:${e}`);
-		socket.emit('new_msg', '꼬ㅒㄲ')
+		console.log(ioServer.sockets.adapter);
 	})
 	
 	socket.on("enter_room",(roomName,done)=>{
@@ -33,6 +47,7 @@ ioServer.on("connection", (socket)=>{
 
 		//나를 제외한 사람에게 보낸다!!
 		socket.to(roomName).emit("welcome")
+		ioServer.sockets.emit("room_change", publicRooms());	//현재 공개방을 뿌린다
 	})
 
 
@@ -46,6 +61,10 @@ ioServer.on("connection", (socket)=>{
 			socket.to(room).emit("bye", socket.nickname)
 		});
 	});
+	
+	socket.on("disconnect", ()=>{
+		ioServer.sockets.emit("room_change", publicRooms());	//현재 공개방을 뿌린다
+	})
 
 
 	socket.on("new_msg", (msg, roomName, done)=>{

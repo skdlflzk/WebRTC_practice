@@ -31,7 +31,7 @@ function handleRoomSubmit(e){
 			console.log(e)
 			room.hidden = false;
 			welcome.hidden = true;
-			h3.innerText = roomName;
+			h3.innerText = `Room : ${roomName}`;
 			const nameForm = room.querySelector("form#name");
 			const chatForm = room.querySelector("form#msg");
 			nameForm.addEventListener("submit", handleNick);
@@ -69,6 +69,17 @@ socket.on("bye", (e)=>{
 socket.on("new_msg", (msg)=>{
 	console.log(msg)
 	addMessage(msg)
+})
+
+socket.on("room_change", (msg)=>{	//현재 공개방 변경 상태를 받았음.
+	const ul = welcome.querySelector("ul")
+	ul.innerText = "";
+	console.log(msg)
+	msg.forEach( room =>{
+		const li = document.createElement("li");
+		li.innerText = room;
+		ul.appendChild(li);
+	})
 })
 
 function addMessage(msg){
