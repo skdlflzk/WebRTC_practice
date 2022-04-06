@@ -58,12 +58,16 @@ function handleChat(e){
 
 form.addEventListener("submit", handleRoomSubmit);
 
-socket.on("welcome", ()=>{
-	addMessage("someone come")
+socket.on("welcome", (user, newCount)=>{
+	const h3 = room.querySelector("h3");
+	h3.innerText = `Room ${roomName} (${newCount})`
+	addMessage(`${user} came in.`)
 })
 
-socket.on("bye", (e)=>{
-	addMessage(`${e} Left. say good bye`)
+socket.on("bye", (user, newCount)=>{
+	const h3 = room.querySelector("h3");
+	h3.innerText = `Room ${roomName} (${newCount})`
+	addMessage(`${user} Left. say good bye`)
 })
 
 socket.on("new_msg", (msg)=>{

@@ -1,9 +1,10 @@
 /**
  * SocketIO를 사용한 server
  */
-import http, { Server } from "http";
+import http from "http";
 import express from "express";
 import SocketIO from "socket.io"
+import {instrument} from "@socket.io/admin-ui"
 
 const app = express();
 app.set('view engine', "pug");
@@ -13,7 +14,17 @@ app.get("/", (req,res)=>res.render("home"));
 app.get("/*",(req,res)=>res.redirect("/"));
 
 const httpServer = http.createServer(app);
-const ioServer = SocketIO(httpServer);
+const ioServer = SocketIO(httpServer,{
+		cors:{
+			origin:["https://admin.socket.io"],
+			credentials:true,
+		},
+	});
+
+	instrument(ioServer,{
+	auth:false,
+	namespaceName : "/"
+})
 
 function publicRooms(){
 	const {
@@ -29,14 +40,19 @@ function publicRooms(){
 	})
 	return publicRooms
 }
+
+function countRoom(roomName){
+	return ioServer.sockets.adapter.rooms.get(roomName)?.size;
+}
+
 ioServer.on("connection", (socket)=>{
 	socket.nickname = 'Anon';
 
 
 	// socket.rooms => 현재 접속한 socket의 방 참가정보
 	socket.onAny((e)=>{
-		console.log(`socket event:${e}`);
-		console.log(ioServer.sockets.adapter);
+		// console.log(`socket event:${e}`);
+		// console.log(ioServer.sockets.adapter);
 	})
 	
 	socket.on("enter_room",(roomName,done)=>{
@@ -46,7 +62,7 @@ ioServer.on("connection", (socket)=>{
 		done(roomName);
 
 		//나를 제외한 사람에게 보낸다!!
-		socket.to(roomName).emit("welcome")
+		socket.to(roomName).emit("welcome", socket.nickname, countRoom(roomName))
 		ioServer.sockets.emit("room_change", publicRooms());	//현재 공개방을 뿌린다
 	})
 
@@ -58,7 +74,7 @@ ioServer.on("connection", (socket)=>{
 
 		socket.rooms.forEach((room)=>{
 			console.log(`bye to ${room}`)
-			socket.to(room).emit("bye", socket.nickname)
+			socket.to(room).emit("bye", socket.nickname, countRoom(room)-1)
 		});
 	});
 	

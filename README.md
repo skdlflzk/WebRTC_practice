@@ -107,6 +107,7 @@ ws://도 다루게 해야할 것 .
 
 
 ## Socket.io
+
 실시간/양방향/이벤트 기반.
 ws랑 똑같잖아? 아님!
 ws도 쓰지만 ws으로 구현된게 아니다.
@@ -126,17 +127,18 @@ script(src="/socket.io/socket.io.js")
 client에서는 io로 접근한다.
 
 ## room
+
 채팅방! socketIO가 제공하는 feature.
+``` javascript
 	socket.on("connection, (socket)=>{
 		socket.on(CUSTOM_EVENT, (msg..., callback)=>{
 			console.log(msg, "처리하고");
 			setTimeout(()=>callback(LONG_TIME_CONSUMING_RESULT), 1500); // 서버 작업이 끝나면 클라이언트가 실행대기중인 함수를 원격으로 수행시킨다!ㄷㄷ
 		})
 	})
-
+```
 
 함수를 전달해서 인자를 받을 수 있지만, 그 인자로 함수를 받을 수는 없나보다ㅋ.ㅋ
-
 
 	socket.id //user는 id가 있는데 기본적으로 id에 속한 방에 들어있다.
 	socket.rooms //현재 무슨 룸이 있는지 알 수 있다.
@@ -145,10 +147,11 @@ client에서는 io로 접근한다.
 	socket.to(ID).emit(`${ID}에 개인메세지 보내기`)
 
 	socket.on(EVENT, ()=>{socket./*... to(R1).to(R2)..*/.emit(CUSTOM_EVENT, `${R1} 내 ${R2}에 msg전송`)})
-socket.to 와 on으로 메세지 발송 대상, 발송 이벤트, 발송 메세지를 지정한다.
+	socket.to 와 on으로 메세지 발송 대상, 발송 이벤트, 발송 메세지를 지정한다.
 
 	const wsServer  = SocketIO(httpServer);
 	wsServer.socketsJoin(ANNOUNCEMENT_ROOM);
+
 강제로 채팅방에 참여시킬수도 있다.
 
 
@@ -161,15 +164,21 @@ Adapter 다른 서버들 사이에 실시간 어플리케이션을 동기화 하
 현재 메모리에서 Adapter를 구현하는 중.
 (서버 restart 마다 room, socket들은 사라진다.)
 -> backend에 db를 가져야한다.
+
 또한, 모든 클라이언트의 connection을 간직해야한다.
 브라우저는 서버로 단 한개의 connection을 열지만 서버는 많은 connection을 가지게 된다.
-여러대의 서버가 있다면 메모리 Adapter는 다른 서버마다 다른 pool을 가지므로 서버간 공유가 안된다는 것.
-Connection에 대한 DB가 필요하다.
+여러대의 서버가 있다면 메모리 Adapter는 다른 서버마다 다른 pool을 가지므로 서버간 공유가 안된다는 것!
 
-Adapter ? 누가 현재 어플리케이션에 접속되었는지 알려줄거임
+*Connection에 대한 저장공간이 필요하다.*
+
+### Adapter ? 누가 현재 어플리케이션에 접속되었는지 정보
+
 아래와 같음.
 
+``` javascript
 	console.log(ioServer.sockets.adapter)
+```
+
 		<ref *2> Adapter {
 		_events: [Object: null prototype] {},
 		_eventsCount: 0,
@@ -216,9 +225,47 @@ Adapter ? 누가 현재 어플리케이션에 접속되었는지 알려줄거임
 		[Symbol(kCapture)]: false
 		}
 
-중요한 것
-1. rooms
-2. sids.(socket ids)
-rooms.containsKey(socket id) ? private room : public room 임.
+### 중요한 것?
 
+``` javascript
+const ioServer =  SocketIO(httpServer);
+ioServer.sockets.adapter.rooms
+ioServer.sockets.adapter.sids
+```
 
+1. rooms - 현재 열려있는 방(과 참여자들) Map.
+2. sids(socket ids) - 현재 참여자들(과 그가 속한 방) Map
+
+	rooms.containsKey(socket id) ? private room : public room 임.
+
+------------
+
+### SocketIO 는 Admin UI 관리자 화면이 있다.
+
+[admin-ui](https://socket.io/docs/v4/admin-ui/)
+
+현재 SocketIO 서버를 비쥬얼라이즈 해서 볼 수 있음.
+
+1. 설치
+	npm i @socket.io/admin-ui
+
+2. 세팅
+``` javascript
+	import {instrument} from "@socket.io/admin-ui"
+
+	...
+
+	const ioServer = SocketIO(httpServer,{
+			cors:{
+				origin:["https://admin.socket.io"],
+				credentials:true,
+			},
+		});
+
+	instrument(ioServer,{
+		auth:false, 
+		namespaceName : "/"	// 나는 이 부분을 안해주면 데이터가 보이지 않더라
+	})
+```
+
+https://admin.socket.io에 접속, 서버 주소 http://localhost:3000 만 입력해서 연결.
