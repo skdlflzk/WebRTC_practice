@@ -269,3 +269,45 @@ ioServer.sockets.adapter.sids
 ```
 
 https://admin.socket.io에 접속, 서버 주소 http://localhost:3000 만 입력해서 연결.
+
+
+------------
+
+## Video Call
+
+``` pug
+html#myFace(autoplay, playsinline)
+```
+
+playsinline? 웹사이트에서만 실행되는 옵션
+
+``` javascript
+
+	/* 카메라/오디오 미디어 가져오기 */
+	const streams = await navigator.mediaDevices.getUserMedia({
+		audio:true,
+		video:true
+		/* 추가로
+		video:{deviceId:{exact:deviceId},} // 카메라 지정
+		video:{facingMode :"user",} // 셀카 모드
+		video:{facingMode:{exact:"environment"}} // 전면으로 촬영
+		*/
+	});
+	myFace.srcObject = streams;
+
+	console.log(streams.getVideoTracks());
+
+	/* 연결된 기기 정보 가져오기 */
+	const devices = await navigator.mediaDevices.enumerateDevices()
+	const cameras = devices.filter(device =>{
+			return device.kind === "videoinput" // "audioinput", 
+		})
+```
+
+getVideoTracks()? 현재 비디오의 *track* 들을 가져오는 것
+비디오, 오디오, 자막의 track도 있음!
+
+	비디오 트랙의 id != 미디어의 deviceId
+	but track.label ==  미디어.label
+
+video:{deviceId:{exact:deviceId}} 에서 쓰이는 deviceId는 enumerateDevices()에서 받아온 기기정보값임.

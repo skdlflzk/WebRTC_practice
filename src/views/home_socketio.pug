@@ -9,13 +9,22 @@ html(lang="en")
 		link(rel="stylesheet" href="https://unpkg.com/mvp.css")
 	body 
 		header
-			h1 Noom
+			h1 Noom 
 		main
-			div#myStream 
-				video#myFace(autoplay, playinline, width="400", height="400") 
-				button#mute Mute
-				button#camera Turn Camera Off
-				select#cameras
-					option(value="device") Face Camera
+			div#welcome
+				form
+					input(placeholder="Room name", requied, type="text")
+					button Enter Room
+				ul Current rooms
+			div#room
+				h3
+				ul
+				form#name
+					input(placeholder="name", requied, type="text")
+					button Save
+				form#msg
+					input(placeholder="message", requied, type="text")
+					button Send
+					
 		script(src="/socket.io/socket.io.js")
 		script(src="public/js/app.js")
