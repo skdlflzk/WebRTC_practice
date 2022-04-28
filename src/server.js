@@ -16,9 +16,20 @@ const httpServer = http.createServer(app);	// http 서버 생성
 const socketServer = SocketIO(httpServer);	// ws 서버 생성
 
 
-socketServer.on("connection",()=>{
-	console.log('');
+socketServer.on("connection",socket =>{
+	socket.on("join_room",(roomName)=>{
+		socket.join(roomName);
+		console.log("cam start");
+		socket.to(roomName).emit("welcome")
+	})
+	
+	socket.on("offer", (offer, roomName)=>{
+		socket.to(roomName).emit("offer", offer);
+	})
 
+	socket.on("answer", (answer, roomName)=>{
+		socket.to(roomName).emit("answer", answer);
+	})
 });
 
 const handleListen = () => console.log(`Listening on http://localhost:3000`);

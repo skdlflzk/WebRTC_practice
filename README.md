@@ -311,3 +311,44 @@ getVideoTracks()? 현재 비디오의 *track* 들을 가져오는 것
 	but track.label ==  미디어.label
 
 video:{deviceId:{exact:deviceId}} 에서 쓰이는 deviceId는 enumerateDevices()에서 받아온 기기정보값임.
+
+------------
+
+
+## webRTC? web RealTime Communication
+ = p2p
+서버가 서로의 위치를 알려줌
+
+### RTC connection 생성하기
+``` javascript
+	// A와 B 서로 connection을 생성했다. 
+	const conA = new RTCPeerConnection() //B의 경우 conB로 구분
+
+	// 1. A가 A 쪽의 local 정보를 connection에 지정하고 offer를 서버를 통해 B에게제공
+	const offer = conA.createOffer()
+	conA.setLocalDescription(offer);
+	socket.emit("offer", offer, roomName)
+
+	// 2. B가 offer를 받기 위해 socket에서 "offer"이벤트 수신을 대기하고 있었다.
+	socket.on("offer", (offer)=>{
+		// offer를 받은 B는 conB객체에 offer를 지정하고
+		conB.setRemoteDescription(offer);
+
+		// 그리고 그 답변 answer를 생성한다.
+		const answer = conB.createAnswer();
+		// B는 B쪽의 정보를 local에 세팅하고 answer를 서버를 통해 A에게 제공
+		conB.setLocalDescription(answer);
+		socket.emit("answer", answer, roomName);
+	})
+
+	// 3. A는 B의 answer를 받기위해 "answer" 이벤트 수신을 대기하고 있었다.
+	socket.on("answer", (answer)=>{
+		conA.setRemoteDescription(answer);
+	})
+```
+
+A와 B의 순서가 바뀌면 서로 대기하거나 제공하는 순서가 바뀔 뿐 원리는 같다.
+
+### icecandidate
+연결 합의점
+이를 다른 브라우저로 전달해야함
